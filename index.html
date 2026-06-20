@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nibble — Accounting Systems Built to Dominate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#000000;
+    --black-soft:#0a0a0a;
+    --panel:#0d120c;
+    --panel-2:#101a10;
+    --lime:#baff29;
+    --lime-dim:#86b81e;
+    --gold:#ffc700;
+    --gold-dim:#b88e00;
+    --white:#ffffff;
+    --grey:#8c948a;
+    --hair:rgba(255,255,255,0.09);
+    --hair-strong:rgba(255,255,255,0.18);
+
+    --display:'Archivo Black', sans-serif;
+    --body:'Archivo', -apple-system, sans-serif;
+    --mono:'JetBrains Mono', monospace;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+  }
+
+  body{
+    background:var(--black);
+    color:var(--white);
+    font-family:var(--body);
+    font-weight:500;
+    line-height:1.5;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* ===== Ambient backdrop ===== */
+  .grain{
+    position:fixed; inset:0; z-index:1; pointer-events:none; opacity:0.045; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .power-glow{
+    position:fixed; top:-20%; left:50%; transform:translateX(-50%);
+    width:1600px; height:1200px; z-index:0; pointer-events:none;
+    background:radial-gradient(ellipse, rgba(186,255,41,0.10) 0%, rgba(255,199,0,0.05) 38%, transparent 70%);
+  }
+  .grid-lines{
+    position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.5;
+    background-image:
+      linear-gradient(var(--hair) 1px, transparent 1px),
+      linear-gradient(90deg, var(--hair) 1px, transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(ellipse 80% 60% at 50% 0%, black 0%, transparent 70%);
+  }
+
+  /* ===== Flying numbers layer (full-page, behind all content) ===== */
+  .flyer-field{
+    position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;
+  }
+  .flyer{
+    position:absolute; font-family:var(--mono); font-weight:700; white-space:nowrap;
+    opacity:0; will-change:transform, opacity; top:100%;
+  }
+  .flyer.green{color:var(--lime); text-shadow:0 0 16px rgba(186,255,41,0.65);}
+  .flyer.gold{color:var(--gold); text-shadow:0 0 16px rgba(255,199,0,0.6);}
+  @keyframes flyUp{
+    0%{opacity:0; transform:translateY(60px) scale(0.92);}
+    10%{opacity:1;}
+    88%{opacity:0.85;}
+    100%{opacity:0; transform:translateY(-115vh) scale(1.06);}
+  }
+
+  a{color:inherit;text-decoration:none;}
+  ::selection{background:var(--lime); color:var(--black);}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 32px; position:relative; z-index:3;}
+
+  /* ===== Nav ===== */
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    backdrop-filter:blur(14px) saturate(160%);
+    background:rgba(0,0,0,0.78);
+    border-bottom:1px solid var(--hair);
+    transition:border-color .4s ease, background .4s ease;
+  }
+  .nav-inner{
+    max-width:1180px; margin:0 auto; padding:18px 32px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--display); font-size:1.3rem; letter-spacing:0.01em;
+  }
+  .logo-mark{width:32px; height:32px; flex-shrink:0;}
+  .logo-mark svg{width:100%;height:100%;display:block;}
+  .nav-links{display:flex; align-items:center; gap:34px; font-size:0.86rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--grey);}
+  .nav-links a{position:relative; padding:4px 0; transition:color .25s ease;}
+  .nav-links a:hover{color:var(--lime);}
+  .nav-links a::after{
+    content:''; position:absolute; left:0; bottom:0; width:0; height:2px; background:var(--lime);
+    transition:width .3s ease;
+  }
+  .nav-links a:hover::after{width:100%;}
+  .nav-cta{
+    font-size:0.84rem; font-weight:800; text-transform:uppercase; letter-spacing:0.03em; color:var(--black);
+    background:var(--lime); padding:11px 22px; border-radius:2px;
+    border:1px solid var(--lime);
+    transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  .nav-cta:hover{transform:translateY(-2px) scale(1.02); box-shadow:0 10px 28px rgba(186,255,41,0.4); background:var(--gold); border-color:var(--gold);}
+
+  /* ===== Hero ===== */
+  .hero{
+    position:relative; z-index:3;
+    padding:172px 0 120px;
+    display:grid; grid-template-columns:1.05fr 0.95fr; gap:56px; align-items:center;
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:10px;
+    font-family:var(--mono); font-size:0.76rem; letter-spacing:0.14em; text-transform:uppercase; font-weight:700;
+    color:var(--gold); border:1px solid rgba(255,199,0,0.4); padding:8px 14px; border-radius:2px;
+    background:rgba(255,199,0,0.07);
+    opacity:0; animation:riseIn .7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:.1s;
+  }
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--gold); animation:pulse 1.8s ease-in-out infinite;}
+
+  h1.hero-title{
+    font-family:var(--display); letter-spacing:-0.01em; text-transform:uppercase;
+    font-size:clamp(2.6rem, 4.8vw, 4.3rem); line-height:0.98; margin:24px 0 22px;
+    opacity:0; animation:riseIn .8s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:.22s;
+  }
+  h1.hero-title .accent{color:var(--lime); text-shadow:0 0 30px rgba(186,255,41,0.35);}
+
+  .hero-sub{
+    font-size:1.1rem; color:#c7cdc3; max-width:490px; line-height:1.6; font-weight:500;
+    opacity:0; animation:riseIn .8s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:.36s;
+  }
+  .hero-sub strong{color:var(--white); font-weight:800;}
+
+  .hero-actions{
+    display:flex; gap:14px; margin-top:36px; flex-wrap:wrap;
+    opacity:0; animation:riseIn .8s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:.5s;
+  }
+  .btn-primary{
+    font-weight:800; font-size:0.94rem; text-transform:uppercase; letter-spacing:0.02em; color:var(--black); background:var(--lime);
+    padding:16px 28px; border-radius:2px; display:inline-flex; align-items:center; gap:9px;
+    transition:transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease, background .22s ease;
+    box-shadow:0 0 0 0 rgba(186,255,41,0.5);
+  }
+  .btn-primary:hover{transform:translateY(-3px) scale(1.02); box-shadow:0 16px 36px rgba(186,255,41,0.35); background:var(--gold);}
+  .btn-ghost{
+    font-weight:800; font-size:0.94rem; text-transform:uppercase; letter-spacing:0.02em; color:var(--white); border:2px solid var(--hair-strong);
+    padding:14px 28px; border-radius:2px; transition:border-color .22s ease, background .22s ease, color .22s ease;
+  }
+  .btn-ghost:hover{border-color:var(--lime); color:var(--lime); background:rgba(186,255,41,0.06);}
+
+  .hero-foot{
+    margin-top:44px; display:flex; gap:26px; flex-wrap:wrap;
+    font-family:var(--mono); font-size:0.78rem; font-weight:700; color:var(--grey); text-transform:uppercase; letter-spacing:0.03em;
+    opacity:0; animation:riseIn .8s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:.62s;
+  }
+  .hero-foot span{display:flex; align-items:center; gap:7px;}
+  .hero-foot .sep{width:4px;height:4px;background:var(--lime);}
+
+  @keyframes riseIn{ from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  /* ===== Calculation terminal (signature element) ===== */
+  .calc-card{
+    background:linear-gradient(155deg, #0c1209, #050805);
+    border:1.5px solid var(--hair-strong);
+    border-radius:4px;
+    box-shadow:0 0 0 1px rgba(186,255,41,0.08), 0 40px 90px -24px rgba(0,0,0,0.85);
+    overflow:hidden; position:relative;
+    opacity:0; animation:riseIn .9s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:.3s;
+  }
+  .calc-card::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg, var(--lime), var(--gold), var(--lime));
+    background-size:200% 100%; animation:barberpole 3s linear infinite;
+  }
+  @keyframes barberpole{ to{background-position:-200% 0;} }
+
+  .calc-head{
+    padding:18px 22px; border-bottom:1px solid var(--hair);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .calc-head-title{font-family:var(--mono); font-size:0.74rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:700; color:var(--grey);}
+  .calc-live{display:flex; align-items:center; gap:7px; font-family:var(--mono); font-size:0.7rem; font-weight:700; color:var(--lime); text-transform:uppercase; letter-spacing:0.08em;}
+  .calc-live .stat-dot{width:7px;height:7px;border-radius:50%; background:var(--lime); animation:pulse 1.4s ease-in-out infinite; box-shadow:0 0 10px var(--lime);}
+
+  .calc-body{padding:28px 24px 8px;}
+  .calc-metric{margin-bottom:24px;}
+  .calc-metric-label{font-family:var(--mono); font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--grey); margin-bottom:8px; display:flex; justify-content:space-between;}
+  .calc-metric-label .delta{color:var(--lime);}
+  .calc-metric-value{
+    font-family:var(--mono); font-weight:800; font-size:2.2rem; color:var(--white); letter-spacing:-0.01em;
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .calc-metric-value .currency{font-size:1.1rem; color:var(--lime);}
+  .calc-bar-track{height:6px; background:rgba(255,255,255,0.06); border-radius:3px; margin-top:12px; overflow:hidden;}
+  .calc-bar-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--lime-dim), var(--lime)); border-radius:3px; transition:width 1.4s cubic-bezier(.2,.8,.2,1); box-shadow:0 0 12px rgba(186,255,41,0.5);}
+
+  .calc-rows{padding:4px 24px 22px; display:flex; flex-direction:column; gap:0;}
+  .calc-row{
+    display:flex; justify-content:space-between; align-items:center; padding:11px 0;
+    border-top:1px solid var(--hair); font-family:var(--mono); font-size:0.85rem;
+  }
+  .calc-row .k{color:var(--grey); font-weight:600;}
+  .calc-row .v{font-weight:800; color:var(--white);}
+  .calc-row .v.up{color:var(--lime);}
+  .calc-row .v.gold{color:var(--gold);}
+
+  .calc-status{
+    padding:14px 24px; font-family:var(--mono); font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--lime); border-top:1px solid var(--hair); display:flex; align-items:center; gap:8px;
+    background:rgba(186,255,41,0.04);
+  }
+
+  /* ===== Sections ===== */
+  section{position:relative; z-index:3; padding:128px 0;}
+  .section-head{max-width:660px; margin-bottom:64px;}
+  .section-eyebrow{
+    font-family:var(--mono); font-size:0.76rem; letter-spacing:0.14em; text-transform:uppercase; font-weight:700; color:var(--lime);
+    margin-bottom:16px; display:flex; align-items:center; gap:10px;
+  }
+  .section-eyebrow::before{content:''; width:26px; height:2px; background:var(--lime);}
+  h2{
+    font-family:var(--display); text-transform:uppercase; font-size:clamp(1.9rem, 3.4vw, 2.7rem); letter-spacing:-0.005em; line-height:1.04;
+  }
+  h2 .accent{color:var(--lime);}
+  h2 .accent.gold{color:var(--gold);}
+  .section-desc{color:#aab0a4; font-size:1.03rem; margin-top:18px; line-height:1.65; font-weight:500;}
+
+  .reveal{opacity:0; transform:translateY(28px); transition:opacity .7s cubic-bezier(.2,.8,.2,1), transform .7s cubic-bezier(.2,.8,.2,1);}
+  .reveal.in-view{opacity:1; transform:translateY(0);}
+  .reveal-stagger > *{opacity:0; transform:translateY(24px); transition:opacity .6s cubic-bezier(.2,.8,.2,1), transform .6s cubic-bezier(.2,.8,.2,1);}
+  .reveal-stagger.in-view > *{opacity:1; transform:translateY(0);}
+  .reveal-stagger.in-view > *:nth-child(1){transition-delay:.0s;}
+  .reveal-stagger.in-view > *:nth-child(2){transition-delay:.08s;}
+  .reveal-stagger.in-view > *:nth-child(3){transition-delay:.16s;}
+  .reveal-stagger.in-view > *:nth-child(4){transition-delay:.24s;}
+
+  /* ===== Scope: IN / OUT ===== */
+  .scope-grid{display:grid; grid-template-columns:1fr 1fr; gap:2px; background:var(--hair); border:1.5px solid var(--hair-strong); border-radius:4px; overflow:hidden;}
+  .scope-col{background:#070a06; padding:38px 34px;}
+  .scope-col.out{background:#050505;}
+  .scope-label{
+    font-family:var(--mono); font-size:0.74rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:700;
+    display:flex; align-items:center; gap:9px; margin-bottom:22px; padding-bottom:18px; border-bottom:1px solid var(--hair);
+  }
+  .scope-col.in .scope-label{color:var(--lime);}
+  .scope-col.out .scope-label{color:var(--grey);}
+  .scope-tag{
+    font-size:1.5rem; font-family:var(--display); font-weight:400; line-height:1; text-transform:uppercase;
+  }
+  .scope-item{
+    display:flex; align-items:flex-start; gap:13px; padding:13px 0; font-size:0.95rem; font-weight:600;
+    border-bottom:1px solid var(--hair);
+  }
+  .scope-item:last-child{border-bottom:none;}
+  .scope-col.in .scope-item-icon{color:var(--lime);}
+  .scope-col.out .scope-item-icon{color:var(--grey);}
+  .scope-item-icon{flex-shrink:0; width:18px; height:18px; margin-top:2px;}
+  .scope-item-icon svg{width:100%; height:100%;}
+  .scope-item-text{color:#bcc2b6;}
+  .scope-col.in .scope-item-text{color:var(--white);}
+  .scope-note{
+    margin-top:22px; padding-top:18px; border-top:1px dashed var(--hair-strong);
+    font-size:0.86rem; color:var(--grey); font-weight:500; font-style:italic; line-height:1.55;
+  }
+
+  /* ===== Process ===== */
+  .process-list{border-top:1px solid var(--hair);}
+  .process-row{
+    display:grid; grid-template-columns:96px 1fr 1.3fr; gap:32px;
+    padding:34px 0; border-bottom:1px solid var(--hair); align-items:start;
+    transition:background .3s ease;
+  }
+  .process-row:hover{background:rgba(186,255,41,0.03);}
+  .process-num{font-family:var(--mono); color:var(--gold); font-size:1.05rem; font-weight:800; padding-top:4px;}
+  .process-num span{color:var(--grey); font-size:0.74rem; display:block; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-top:4px;}
+  .process-title{font-family:var(--display); font-size:1.3rem; text-transform:uppercase;}
+  .process-body{color:#aab0a4; font-size:0.96rem; line-height:1.65; max-width:480px; font-weight:500;}
+  .process-row:hover .process-num{color:var(--lime); transition:color .3s ease;}
+
+  /* ===== Multi-entity ===== */
+  .entity-section{background:linear-gradient(180deg, transparent, rgba(186,255,41,0.03) 30%, rgba(186,255,41,0.03) 70%, transparent);}
+  .entity-layout{display:grid; grid-template-columns:1fr 1.1fr; gap:56px; align-items:center;}
+  .entity-diagram{
+    position:relative; background:#070a06; border:1.5px solid var(--hair-strong); border-radius:4px;
+    padding:40px; min-height:380px;
+  }
+  .entity-root{
+    font-family:var(--mono); font-size:0.8rem; font-weight:800; color:var(--black); background:var(--lime);
+    border-radius:2px; padding:13px 18px; text-align:center;
+    width:fit-content; margin:0 auto 0; position:relative; z-index:2;
+    box-shadow:0 0 32px rgba(186,255,41,0.4);
+  }
+  .entity-children{display:flex; justify-content:space-between; gap:14px; margin-top:64px; position:relative;}
+  .entity-node{
+    font-family:var(--mono); font-size:0.72rem; font-weight:700; color:#aab0a4; background:var(--black);
+    border:1.5px solid var(--hair-strong); border-radius:2px; padding:11px 14px; text-align:center; flex:1;
+    transition:border-color .3s ease, color .3s ease;
+  }
+  .entity-node:hover{border-color:var(--gold); color:var(--white);}
+  .entity-svg-lines{position:absolute; top:-64px; left:0; width:100%; height:64px; z-index:1;}
+  .entity-svg-lines path{stroke:var(--hair-strong); stroke-width:1.5; fill:none;}
+  .entity-consol{
+    margin-top:28px; padding-top:24px; border-top:1px dashed var(--hair-strong);
+    text-align:center; font-family:var(--mono); font-size:0.7rem; font-weight:700; color:var(--grey); letter-spacing:0.08em; text-transform:uppercase;
+  }
+  .entity-consol strong{color:var(--gold); display:block; font-size:0.8rem; margin-top:6px; letter-spacing:0.04em;}
+
+  .entity-feature{display:flex; gap:16px; padding:18px 0; border-bottom:1px solid var(--hair);}
+  .entity-feature:last-child{border-bottom:none;}
+  .entity-feature-icon{
+    flex-shrink:0; width:40px; height:40px; border-radius:3px; background:rgba(186,255,41,0.1);
+    border:1.5px solid rgba(186,255,41,0.35); display:flex; align-items:center; justify-content:center; color:var(--lime);
+  }
+  .entity-feature-icon svg{width:19px; height:19px;}
+  .entity-feature-title{font-weight:800; font-size:1rem; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.01em;}
+  .entity-feature-text{color:#aab0a4; font-size:0.88rem; line-height:1.55; font-weight:500;}
+
+  /* ===== Audience ===== */
+  .audience-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
+  .audience-card{
+    background:#070a06; border:1.5px solid var(--hair); border-radius:4px; padding:30px 26px;
+    transition:transform .3s cubic-bezier(.2,.8,.2,1), border-color .3s ease, box-shadow .3s ease;
+  }
+  .audience-card:hover{transform:translateY(-6px); border-color:rgba(186,255,41,0.45); box-shadow:0 24px 48px -18px rgba(186,255,41,0.15);}
+  .audience-icon{width:32px; height:32px; color:var(--gold); margin-bottom:18px;}
+  .audience-icon svg{width:100%; height:100%;}
+  .audience-title{font-family:var(--display); font-size:1.15rem; text-transform:uppercase; margin-bottom:10px;}
+  .audience-text{color:#aab0a4; font-size:0.9rem; line-height:1.6; font-weight:500;}
+
+  /* ===== Training / handover ===== */
+  .handover-layout{display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center;}
+  .handover-visual{
+    background:#070a06; border:1.5px solid var(--hair-strong); border-radius:4px; padding:36px;
+  }
+  .handover-step{display:flex; align-items:center; gap:16px; padding:16px 0;}
+  .handover-step-icon{
+    width:42px; height:42px; border-radius:50%; border:2px solid var(--hair-strong); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:0.84rem; font-weight:800; color:var(--grey);
+    transition:all .4s cubic-bezier(.2,.8,.2,1);
+  }
+  .handover-step.active .handover-step-icon{border-color:var(--lime); color:var(--black); background:var(--lime); box-shadow:0 0 20px rgba(186,255,41,0.5);}
+  .handover-step-text{font-size:0.94rem; color:#aab0a4; font-weight:600; text-transform:uppercase; letter-spacing:0.01em;}
+  .handover-step.active .handover-step-text{color:var(--white);}
+  .handover-line{width:2px; height:24px; background:var(--hair-strong); margin-left:20px;}
+  .handover-line.active{background:var(--lime);}
+
+  .handover-copy ul{list-style:none; margin-top:24px;}
+  .handover-copy li{display:flex; gap:12px; padding:10px 0; font-size:0.95rem; color:#bcc2b6; font-weight:600; align-items:flex-start;}
+  .handover-copy li svg{width:16px; height:16px; flex-shrink:0; margin-top:4px; color:var(--lime);}
+
+  /* ===== Add-on banner ===== */
+  .addon-banner{
+    background:linear-gradient(135deg, rgba(255,199,0,0.1), rgba(255,199,0,0.02));
+    border:1.5px solid rgba(255,199,0,0.35); border-radius:4px; padding:36px 40px;
+    display:flex; align-items:center; gap:28px;
+  }
+  .addon-icon{width:48px; height:48px; flex-shrink:0; color:var(--gold);}
+  .addon-icon svg{width:100%; height:100%;}
+  .addon-title{font-family:var(--display); font-size:1.2rem; text-transform:uppercase; margin-bottom:6px;}
+  .addon-text{color:#bcc2b6; font-size:0.92rem; line-height:1.6; font-weight:500;}
+  .addon-text strong{color:var(--white); font-weight:800;}
+
+  /* ===== CTA ===== */
+  .cta-section{
+    text-align:center; padding:140px 0;
+    background:radial-gradient(ellipse at center, rgba(186,255,41,0.1), transparent 65%);
+  }
+  .cta-section h2{max-width:680px; margin:0 auto;}
+  .cta-section .section-desc{margin-left:auto; margin-right:auto; max-width:480px;}
+
+  .contact-form{
+    max-width:520px; margin:38px auto 0; text-align:left;
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .form-row{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .contact-form input, .contact-form textarea{
+    width:100%; background:#070a06; border:1.5px solid var(--hair-strong); border-radius:2px;
+    color:var(--white); font-family:var(--body); font-weight:600; font-size:0.94rem;
+    padding:14px 16px; resize:vertical; transition:border-color .25s ease, box-shadow .25s ease;
+  }
+  .contact-form input::placeholder, .contact-form textarea::placeholder{color:var(--grey); font-weight:500;}
+  .contact-form input:focus, .contact-form textarea:focus{
+    outline:none; border-color:var(--lime); box-shadow:0 0 0 3px rgba(186,255,41,0.15);
+  }
+  .form-submit{justify-content:center; width:100%; margin-top:4px; border:none; cursor:pointer; font-family:var(--body);}
+  .form-confirm{
+    display:none; text-align:center; color:var(--lime); font-family:var(--mono); font-weight:700;
+    font-size:0.84rem; text-transform:uppercase; letter-spacing:0.04em; margin-top:4px;
+  }
+  .form-confirm.show{display:block; animation:riseIn .5s ease forwards;}
+
+  .cta-secondary{
+    display:block; margin:22px auto 0; background:transparent; cursor:pointer; font-family:var(--body);
+  }
+
+  .sample-panel{
+    max-width:560px; margin:0 auto 0; text-align:left; overflow:hidden;
+    max-height:0; opacity:0; transition:max-height .5s cubic-bezier(.2,.8,.2,1), opacity .4s ease, margin .5s ease;
+    border-radius:4px; border:0 solid var(--hair-strong);
+  }
+  .sample-panel.show{
+    max-height:420px; opacity:1; margin-top:28px; border-width:1.5px;
+  }
+  .sample-row{
+    display:grid; grid-template-columns:1.6fr 0.8fr 0.8fr; gap:10px;
+    padding:13px 18px; font-family:var(--mono); font-size:0.82rem; font-weight:600; color:#bcc2b6;
+    border-bottom:1px solid var(--hair); background:#070a06;
+  }
+  .sample-row:last-child{border-bottom:none;}
+  .sample-row.sample-head{
+    background:#0d120c; color:var(--lime); text-transform:uppercase; letter-spacing:0.06em; font-size:0.72rem; font-weight:800;
+  }
+
+  /* ===== Footer ===== */
+  footer{border-top:1px solid var(--hair); padding:56px 0 36px; position:relative; z-index:3;}
+  .footer-top{display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:32px; padding-bottom:36px; border-bottom:1px solid var(--hair);}
+  .footer-brand{max-width:280px;}
+  .footer-brand .logo{margin-bottom:14px;}
+  .footer-brand p{color:var(--grey); font-size:0.88rem; line-height:1.6; font-weight:500;}
+  .footer-cols{display:flex; gap:64px; flex-wrap:wrap;}
+  .footer-col h4{font-family:var(--mono); font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:700; color:var(--grey); margin-bottom:16px;}
+  .footer-col a{display:block; color:#bcc2b6; font-size:0.9rem; font-weight:600; padding:6px 0; transition:color .25s ease;}
+  .footer-col a:hover{color:var(--lime);}
+  .footer-bottom{display:flex; justify-content:space-between; padding-top:28px; font-size:0.8rem; color:var(--grey); font-weight:600; flex-wrap:wrap; gap:12px;}
+
+  /* ===== Mobile ===== */
+  @media (max-width:920px){
+    .nav-links{display:none;}
+    .hero{grid-template-columns:1fr; padding-top:128px;}
+    .entity-layout, .handover-layout{grid-template-columns:1fr; gap:40px;}
+    .scope-grid{grid-template-columns:1fr;}
+    .audience-grid{grid-template-columns:1fr;}
+    .process-row{grid-template-columns:1fr; gap:10px;}
+    .addon-banner{flex-direction:column; align-items:flex-start;}
+    .wrap{padding:0 22px;}
+    section{padding:84px 0;}
+    .flyer{opacity:0.6;}
+    .form-row{grid-template-columns:1fr;}
+    .sample-row{grid-template-columns:1.4fr 0.8fr 0.8fr; font-size:0.74rem; padding:11px 14px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+<div class="power-glow"></div>
+<div class="grid-lines"></div>
+<div class="flyer-field" id="flyer-field"></div>
+
+<header id="site-header">
+  <div class="nav-inner">
+    <div class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="30" height="30" rx="4" stroke="#baff29" stroke-width="1.6"/>
+          <path d="M8 22L14 13L19 18L24 9" stroke="#baff29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M19 9H24V14" stroke="#ffc700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      NIBBLE
+    </div>
+    <nav class="nav-links">
+      <a href="#scope">Scope</a>
+      <a href="#process">Process</a>
+      <a href="#entities">Multi-Entity</a>
+      <a href="#training">Training</a>
+    </nav>
+    <a href="#contact" class="nav-cta">Book a Review</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero wrap">
+    <div class="hero-copy">
+      <span class="eyebrow"><span class="dot"></span> Accounting system implementation</span>
+      <h1 class="hero-title">Build the<br>system. <span class="accent">Run<br>the books.</span></h1>
+      <p class="hero-sub">
+        Nibble installs accounting ERP systems built for multi-entity businesses — chart of accounts, structure, automation, control — then trains your own bookkeeper to run it like a machine. <strong>We don't touch your books day-to-day. We make sure they never need fixing.</strong>
+      </p>
+      <div class="hero-actions">
+        <a href="#contact" class="btn-primary">
+          Get Set Up
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="#scope" class="btn-ghost">See What's Included</a>
+      </div>
+      <div class="hero-foot">
+        <span>Multi-entity ready</span>
+        <span class="sep"></span>
+        <span>One-time setup</span>
+        <span class="sep"></span>
+        <span>Your team trained</span>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="calc-card" id="calc-card">
+        <div class="calc-head">
+          <span class="calc-head-title">System Setup — Live Calculation</span>
+          <div class="calc-live"><span class="stat-dot"></span> Running</div>
+        </div>
+        <div class="calc-body">
+          <div class="calc-metric">
+            <div class="calc-metric-label"><span>Entities Configured</span> <span class="delta" id="delta-1">+0</span></div>
+            <div class="calc-metric-value"><span id="metric-1">0</span></div>
+            <div class="calc-bar-track"><div class="calc-bar-fill" id="bar-1"></div></div>
+          </div>
+          <div class="calc-metric">
+            <div class="calc-metric-label"><span>Accounts Mapped</span> <span class="delta" id="delta-2">+0</span></div>
+            <div class="calc-metric-value"><span id="metric-2">0</span></div>
+            <div class="calc-bar-track"><div class="calc-bar-fill" id="bar-2"></div></div>
+          </div>
+        </div>
+        <div class="calc-rows">
+          <div class="calc-row"><span class="k">Consolidation</span><span class="v up">Automated</span></div>
+          <div class="calc-row"><span class="k">Bank Feeds</span><span class="v up">Connected</span></div>
+          <div class="calc-row"><span class="k">Staff Access</span><span class="v gold">Trained</span></div>
+        </div>
+        <div class="calc-status" id="calc-status"><span>SYSTEM LIVE — READY TO RUN</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SCOPE: IN / OUT ===== -->
+  <section id="scope">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="section-eyebrow">Scope of work</div>
+        <h2>We're <span class="accent">system builders</span> — not your accounting department</h2>
+        <p class="section-desc">Nibble's job ends where your bookkeeper's job begins. That line is intentional — it keeps your numbers owned by you, not locked inside a vendor relationship.</p>
+      </div>
+
+      <div class="scope-grid reveal">
+        <div class="scope-col in">
+          <div class="scope-label"><span class="scope-tag" style="color:var(--lime)">In</span> What Nibble does</div>
+          <div class="scope-item">
+            <span class="scope-item-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="scope-item-text">Design and configure your chart of accounts across every entity</span>
+          </div>
+          <div class="scope-item">
+            <span class="scope-item-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="scope-item-text">Install and configure the ERP/accounting system itself</span>
+          </div>
+          <div class="scope-item">
+            <span class="scope-item-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="scope-item-text">Build inter-entity mapping, consolidation, and approval workflows</span>
+          </div>
+          <div class="scope-item">
+            <span class="scope-item-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="scope-item-text">Connect bank feeds, set controls, and automate recurring entries</span>
+          </div>
+          <div class="scope-item">
+            <span class="scope-item-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="scope-item-text">Train your bookkeeper or accounting staff to operate the system end to end</span>
+          </div>
+        </div>
+        <div class="scope-col out">
+          <div class="scope-label"><span class="scope-tag" style="color:var(--grey)">Out</span> What we don't do (by default)</div>
+          <div class="scope-item">
+            <span class="scope-item-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+            <span class="scope-item-text">Daily transaction entry and categorization</span>
+          </div>
+          <div class="scope-item">
+            <span class="scope-item-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+            <span class="scope-item-text">Monthly reconciliations and journal posting</span>
+          </div>
+          <div class="scope-item">
+            <span class="scope-item-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+            <span class="scope-item-text">Payroll processing or accounts payable runs</span>
+          </div>
+          <div class="scope-item">
+            <span class="scope-item-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+            <span class="scope-item-text">Ongoing bookkeeping as your default arrangement</span>
+          </div>
+          <div class="scope-note">If you genuinely don't have anyone in-house yet, we can hold the bookkeeping seat short-term while you hire. Available — never the priority.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PROCESS ===== -->
+  <section id="process">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="section-eyebrow">How a setup runs</div>
+        <h2>Four stages. <span class="accent gold">One</span> system that doesn't break.</h2>
+        <p class="section-desc">Every engagement follows the same sequence — skipping a stage is how multi-entity books end up tangled in the first place.</p>
+      </div>
+
+      <div class="process-list">
+        <div class="process-row reveal">
+          <div class="process-num">01<span>Discovery</span></div>
+          <div class="process-title">Map the entities</div>
+          <div class="process-body">We document every legal entity, how money and goods actually move between them, and which reports each stakeholder needs to see — before touching any software.</div>
+        </div>
+        <div class="process-row reveal">
+          <div class="process-num">02<span>Build</span></div>
+          <div class="process-title">Configure the system</div>
+          <div class="process-body">Chart of accounts, entity hierarchy, intercompany mapping, bank feeds, approval rules, and consolidation logic — built directly inside your chosen ERP.</div>
+        </div>
+        <div class="process-row reveal">
+          <div class="process-num">03<span>Train</span></div>
+          <div class="process-title">Hand the keys to your people</div>
+          <div class="process-body">Your bookkeeper or accounting hire is trained on the live system — not a sandbox — so day one of independent use is also day one of real entries.</div>
+        </div>
+        <div class="process-row reveal">
+          <div class="process-num">04<span>Support</span></div>
+          <div class="process-title">Stay reachable, not embedded</div>
+          <div class="process-body">We remain available for system questions, edge cases, and periodic health checks. The books stay yours; the system stays sound.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MULTI-ENTITY ===== -->
+  <section id="entities" class="entity-section">
+    <div class="wrap">
+      <div class="entity-layout">
+        <div class="entity-diagram reveal">
+          <div class="entity-root">HOLDING CO. — CONSOLIDATED</div>
+          <div class="entity-children">
+            <svg class="entity-svg-lines" viewBox="0 0 400 64" preserveAspectRatio="none">
+              <path d="M200 0 L200 20 L50 20 L50 64 M200 20 L200 64 M200 20 L350 20 L350 64"/>
+            </svg>
+            <div class="entity-node">ENTITY A<br>RETAIL PH</div>
+            <div class="entity-node">ENTITY B<br>TRADING CO.</div>
+            <div class="entity-node">ENTITY C<br>SERVICES INC.</div>
+          </div>
+          <div class="entity-consol">Eliminations applied automatically<strong>Group P&amp;L balances in one view</strong></div>
+        </div>
+
+        <div class="entity-copy">
+          <div class="section-eyebrow reveal">Built for groups</div>
+          <h2 class="reveal">Multi-entity isn't a setting. <span class="accent">It's the default.</span></h2>
+          <p class="section-desc reveal">Most accounting software treats a second entity as an afterthought. We configure the structure on purpose — so consolidation, intercompany transactions, and entity-level reporting work the way your group actually operates.</p>
+
+          <div class="reveal-stagger" style="margin-top:8px;">
+            <div class="entity-feature">
+              <span class="entity-feature-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 20V10M12 20V4M20 20v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+              <div><div class="entity-feature-title">Entity &amp; group reporting</div><div class="entity-feature-text">Run a P&amp;L for one branch or the whole holding structure, without rebuilding reports each time.</div></div>
+            </div>
+            <div class="entity-feature">
+              <span class="entity-feature-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M7 7h10v10M7 17L17 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              <div><div class="entity-feature-title">Intercompany mapping</div><div class="entity-feature-text">Transactions between your own entities are tagged and eliminated correctly at consolidation, not patched after the fact.</div></div>
+            </div>
+            <div class="entity-feature">
+              <span class="entity-feature-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+              <div><div class="entity-feature-title">Built on systems that scale</div><div class="entity-feature-text">We configure ERPs designed for multi-entity from the ground up, not single-company tools stretched past their limit.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== AUDIENCE ===== -->
+  <section id="audience">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="section-eyebrow">Who this is for</div>
+        <h2>If your books are <span class="accent gold">outgrowing</span> a spreadsheet</h2>
+      </div>
+
+      <div class="audience-grid reveal-stagger">
+        <div class="audience-card">
+          <span class="audience-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div class="audience-title">Holding companies</div>
+          <div class="audience-text">Multiple subsidiaries that need to roll up into one clean consolidated view, without losing entity-level detail.</div>
+        </div>
+        <div class="audience-card">
+          <span class="audience-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 9l9-6 9 6-9 6-9-6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M3 9v6l9 6 9-6V9" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+          <div class="audience-title">Franchise &amp; branch operators</div>
+          <div class="audience-text">Same business, many locations — each needs its own books, and someone above them needs the combined picture.</div>
+        </div>
+        <div class="audience-card">
+          <span class="audience-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div class="audience-title">Growing SMEs</div>
+          <div class="audience-text">You've hired or are about to hire a bookkeeper — they need a real system to work inside, not another spreadsheet to maintain.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TRAINING ===== -->
+  <section id="training">
+    <div class="wrap">
+      <div class="handover-layout">
+        <div class="handover-copy">
+          <div class="section-eyebrow reveal">Your people, not ours</div>
+          <h2 class="reveal">A system is only as strong as <span class="accent">who runs it</span></h2>
+          <p class="section-desc reveal">You need accounting personnel or a bookkeeper on your side before we start — we train them directly on the live system so ownership never sits with us.</p>
+          <ul class="reveal-stagger">
+            <li><svg viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Hands-on walkthroughs on your real chart of accounts</li>
+            <li><svg viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> Documented workflows your staff can reference after we're gone</li>
+            <li><svg viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg> A short supervised period before full handover</li>
+          </ul>
+        </div>
+
+        <div class="handover-visual reveal" id="handover-visual">
+          <div class="handover-step" data-step="0">
+            <span class="handover-step-icon">1</span>
+            <span class="handover-step-text">System configured by Nibble</span>
+          </div>
+          <div class="handover-line" data-line="0"></div>
+          <div class="handover-step" data-step="1">
+            <span class="handover-step-icon">2</span>
+            <span class="handover-step-text">Bookkeeper trained on live data</span>
+          </div>
+          <div class="handover-line" data-line="1"></div>
+          <div class="handover-step" data-step="2">
+            <span class="handover-step-icon">3</span>
+            <span class="handover-step-text">Supervised first close, together</span>
+          </div>
+          <div class="handover-line" data-line="2"></div>
+          <div class="handover-step" data-step="3">
+            <span class="handover-step-icon">✓</span>
+            <span class="handover-step-text">Full handover — your team owns it</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ADD-ON ===== -->
+  <section id="addon">
+    <div class="wrap">
+      <div class="addon-banner reveal">
+        <span class="addon-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <div>
+          <div class="addon-title">No bookkeeper on hand yet?</div>
+          <div class="addon-text">Setup always comes first — but if you need someone to handle entries while you hire or train internally, we can take on bookkeeping <strong>as a short-term add-on</strong>, scoped separately from the system build. Never our default offer, only available on request.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CTA ===== -->
+  <section class="cta-section" id="contact">
+    <div class="wrap">
+      <div class="section-eyebrow reveal" style="justify-content:center;">Start with a system review</div>
+      <h2 class="reveal">Let's see what your entities <span class="accent gold">actually need</span></h2>
+      <p class="section-desc reveal">A 30-minute review of your current setup — entities, tools, and gaps — before we propose anything.</p>
+
+      <form class="contact-form reveal" id="contact-form">
+        <div class="form-row">
+          <input type="text" name="name" placeholder="Your name" required>
+          <input type="email" name="email" placeholder="Work email" required>
+        </div>
+        <textarea name="message" placeholder="Tell us about your entities — how many, and what you're using today" rows="3"></textarea>
+        <button type="submit" class="btn-primary form-submit">
+          Request a System Review
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <p class="form-confirm" id="form-confirm">Request received — we'll get back to you shortly.</p>
+      </form>
+
+      <button type="button" class="btn-ghost cta-secondary" id="sample-toggle">View Sample Chart of Accounts</button>
+
+      <div class="sample-panel" id="sample-panel">
+        <div class="sample-row sample-head"><span>Account</span><span>Type</span><span>Entity</span></div>
+        <div class="sample-row"><span>1000 — Cash on Hand</span><span>Asset</span><span>All</span></div>
+        <div class="sample-row"><span>1200 — Accounts Receivable</span><span>Asset</span><span>Entity A</span></div>
+        <div class="sample-row"><span>2000 — Accounts Payable</span><span>Liability</span><span>Entity A</span></div>
+        <div class="sample-row"><span>3000 — Intercompany Due To/From</span><span>Equity</span><span>All</span></div>
+        <div class="sample-row"><span>4000 — Sales Revenue</span><span>Revenue</span><span>Entity B</span></div>
+        <div class="sample-row"><span>5000 — Cost of Goods Sold</span><span>Expense</span><span>Entity B</span></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="logo">
+          <span class="logo-mark">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1" y="1" width="30" height="30" rx="4" stroke="#baff29" stroke-width="1.6"/>
+              <path d="M8 22L14 13L19 18L24 9" stroke="#baff29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M19 9H24V14" stroke="#ffc700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          NIBBLE
+        </div>
+        <p>Accounting system setup for multi-entity businesses. We build it, train your team, and step back.</p>
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>Services</h4>
+          <a href="#scope">System setup</a>
+          <a href="#entities">Multi-entity config</a>
+          <a href="#training">Staff training</a>
+          <a href="#addon">Bookkeeping (add-on)</a>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="#process">Our process</a>
+          <a href="#audience">Who we work with</a>
+          <a href="#contact">Contact</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Nibble. Built to dominate the close.</span>
+      <span>Setup &amp; training first. Always.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ===== Scroll-triggered reveals =====
+  const revealEls = document.querySelectorAll('.reveal, .reveal-stagger');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        entry.target.classList.add('in-view');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+  revealEls.forEach(el => io.observe(el));
+
+  // ===== Header background on scroll =====
+  const header = document.getElementById('site-header');
+  window.addEventListener('scroll', () => {
+    if(window.scrollY > 40){
+      header.style.background = 'rgba(0,0,0,0.94)';
+      header.style.borderBottomColor = 'rgba(255,255,255,0.16)';
+    } else {
+      header.style.background = 'rgba(0,0,0,0.78)';
+      header.style.borderBottomColor = 'rgba(255,255,255,0.09)';
+    }
+  });
+
+  // ===== Flying numbers field (continuous live background) =====
+  const flyerField = document.getElementById('flyer-field');
+  const flyerSamples = [
+    '+₱128,400', '+₱42,900', '99.8%', '+₱310,200', 'BALANCED',
+    '+₱76,500', '4 ENTITIES', '+₱19,200', 'RECONCILED', '+₱205,000',
+    '+₱8,750', 'AUTOMATED', '+₱64,300', '100%', '+₱143,800',
+    '+₱2,150', '+₱58,900', 'CLEARED', '+₱91,400', '+12.4%',
+    '+₱36,700', 'POSTED', '+₱174,300', '+₱11,250', 'VERIFIED'
+  ];
+  function spawnFlyer(){
+    const el = document.createElement('div');
+    const isGold = Math.random() < 0.35;
+    el.className = 'flyer ' + (isGold ? 'gold' : 'green');
+    el.textContent = flyerSamples[Math.floor(Math.random() * flyerSamples.length)];
+    const startX = Math.random() * 96;
+    const size = 0.8 + Math.random() * 1.1;
+    const duration = 9 + Math.random() * 7;
+    el.style.left = startX + 'vw';
+    el.style.fontSize = size + 'rem';
+    el.style.animation = 'flyUp ' + duration + 's linear forwards';
+    flyerField.appendChild(el);
+    setTimeout(() => el.remove(), duration * 1000 + 200);
+  }
+  // seed an initial wave so the field feels alive immediately, then keep a steady dense stream
+  for(let i = 0; i < 10; i++){ setTimeout(spawnFlyer, i * 280); }
+  setInterval(spawnFlyer, 650);
+
+  // ===== Calculation terminal animation =====
+  function animateCount(el, target, duration, prefix, suffix){
+    const start = performance.now();
+    function tick(now){
+      const p = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const val = Math.floor(eased * target);
+      el.textContent = (prefix || '') + val.toLocaleString() + (suffix || '');
+      if(p < 1) requestAnimationFrame(tick);
+      else el.textContent = (prefix || '') + target.toLocaleString() + (suffix || '');
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function runCalcAnimation(){
+    const m1 = document.getElementById('metric-1');
+    const m2 = document.getElementById('metric-2');
+    const d1 = document.getElementById('delta-1');
+    const d2 = document.getElementById('delta-2');
+    const b1 = document.getElementById('bar-1');
+    const b2 = document.getElementById('bar-2');
+    const status = document.getElementById('calc-status');
+
+    m1.textContent = '0'; m2.textContent = '0';
+    d1.textContent = '+0'; d2.textContent = '+0';
+    b1.style.width = '0%'; b2.style.width = '0%';
+    status.style.opacity = 0.4;
+    status.innerHTML = '<span>CALCULATING…</span>';
+
+    setTimeout(() => { animateCount(m1, 4, 900); b1.style.width = '100%'; d1.textContent = '+4'; }, 200);
+    setTimeout(() => { animateCount(m2, 186, 1400); b2.style.width = '92%'; d2.textContent = '+186'; }, 500);
+
+    setTimeout(() => {
+      status.style.opacity = 1;
+      status.innerHTML = '<span>SYSTEM LIVE — READY TO RUN</span>';
+    }, 2200);
+  }
+
+  window.addEventListener('load', () => {
+    setTimeout(runCalcAnimation, 900);
+    setInterval(runCalcAnimation, 7000);
+  });
+
+  // ===== Handover step sequence =====
+  function runHandoverSequence(){
+    const steps = document.querySelectorAll('.handover-step');
+    const lines = document.querySelectorAll('.handover-line');
+    steps.forEach(s => s.classList.remove('active'));
+    lines.forEach(l => l.classList.remove('active'));
+
+    let i = 0;
+    const interval = setInterval(() => {
+      if(i < steps.length) steps[i].classList.add('active');
+      if(i < lines.length) lines[i].classList.add('active');
+      i++;
+      if(i > steps.length){ clearInterval(interval); }
+    }, 500);
+  }
+
+  const handoverVisual = document.getElementById('handover-visual');
+  let handoverRan = false;
+  const hIo = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting && !handoverRan){
+        handoverRan = true;
+        setTimeout(runHandoverSequence, 200);
+      }
+    });
+  }, { threshold: 0.4 });
+  hIo.observe(handoverVisual);
+
+  // ===== Contact form — handled entirely in-page, no external navigation =====
+  const contactForm = document.getElementById('contact-form');
+  const formConfirm = document.getElementById('form-confirm');
+  contactForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    formConfirm.classList.add('show');
+    contactForm.reset();
+    setTimeout(() => formConfirm.classList.remove('show'), 5000);
+  });
+
+  // ===== Sample chart of accounts — expands in place =====
+  const sampleToggle = document.getElementById('sample-toggle');
+  const samplePanel = document.getElementById('sample-panel');
+  sampleToggle.addEventListener('click', () => {
+    const isOpen = samplePanel.classList.toggle('show');
+    sampleToggle.textContent = isOpen ? 'Hide Sample Chart of Accounts' : 'View Sample Chart of Accounts';
+  });
+</script>
+
+</body>
+</html>
